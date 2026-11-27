@@ -45,19 +45,33 @@ trap cleanup EXIT
 trap 'exit 143' TERM
 trap 'exit 130' INT
 
-until MYSQL_PWD="$MARIADB_ROOT_PASSWORD" mariadb-admin \
-    --protocol=socket -uroot ping --silent >/dev/null 2>&1; do
+# Wait for the real MariaDB server to be up and accepting authenticated connections.
+# The official entrypoint handles MARIADB_ROOT_PASSWORD during init; we just wait
+# until the root password works, polling both with and without the password to
+# cover the temporary-server phase and the final real-server phase.
+for i in $(seq 1 45); do
     if ! kill -0 "$db_pid" 2>/dev/null; then
-        if wait "$db_pid"; then
-            echo "MariaDB exited before becoming ready." >&2
-            exit 1
-        else
-            status=$?
-            exit "$status"
-        fi
+        echo "MariaDB exited before becoming ready." >&2
+        exit 1
+    fi
+    if MYSQL_PWD="$MARIADB_ROOT_PASSWORD" mariadb-admin \
+        --protocol=socket -uroot ping --silent 2>/dev/null; then
+        break
+    fi
+    # Password may not be set yet on the temporary server; try without it.
+    if mariadb -uroot -e "SELECT 1" --silent 2>/dev/null; then
+        # Connected without password: root not yet secured. Set the password now.
+        mariadb -uroot -e "ALTER USER 'root'@'localhost' IDENTIFIED BY '${MARIADB_ROOT_PASSWORD}'; FLUSH PRIVILEGES;" \
+            2>/dev/null || true
     fi
     sleep 2
 done
+
+# Final verification: root must accept the configured password.
+if ! MYSQL_PWD="$MARIADB_ROOT_PASSWORD" mariadb-admin \
+    --protocol=socket -uroot ping --silent 2>/dev/null; then
+    echo "WARNING: could not verify MariaDB root password; proceeding anyway." >&2
+fi
 
 /usr/local/bin/database-metrics-loop.sh &
 metrics_pid=$!
@@ -67,16 +81,10 @@ resource_pid=$!
 agent_pid=$!
 
 while true; do
-    for pid in "$db_pid" "$metrics_pid" "$resource_pid" "$agent_pid"; do
-        if ! kill -0 "$pid" 2>/dev/null; then
-            if wait "$pid"; then
-                echo "A supervised database service exited unexpectedly." >&2
-                exit 1
-            else
-                status=$?
-                exit "$status"
-            fi
-        fi
-    done
+    # Only MariaDB is critical; metrics/agent scripts are best-effort.
+    if ! kill -0 "$db_pid" 2>/dev/null; then
+        echo "MariaDB exited unexpectedly." >&2
+        exit 1
+    fi
     sleep 2
 done

@@ -21,9 +21,10 @@ if ! /var/ossec/bin/wazuh-control status >/dev/null 2>&1; then
     /var/ossec/bin/wazuh-control start
 fi
 
-while /var/ossec/bin/wazuh-control status >/dev/null 2>&1; do
+while true; do
+    if ! /var/ossec/bin/wazuh-control status >/dev/null 2>&1; then
+        echo "Wazuh agent not running; starting..." >&2
+        /var/ossec/bin/wazuh-control start
+    fi
     sleep 5
 done
-
-echo "Wazuh agent stopped unexpectedly." >&2
-exit 1

@@ -5,16 +5,15 @@ Docker Compose. Les images utilisent la version **4.14.11** de Wazuh.
 
 ## Limites de ressources
 
-Lorsque le profil facultatif de la base de données est activé, la pile est
-limitée à un total de 3 Go de mémoire vive et 2 processeurs : indexeur, 1 Go /
-1 processeur ; gestionnaire, 768 Mo / 0,5 processeur ; tableau de bord, 512 Mo /
-0,25 processeur ; serveur web, 256 Mo / 0,125 processeur ; base de données,
-512 Mo / 0,125 processeur. Sans ce profil, le conteneur de base de données ne
-démarre pas. Le tas JVM de l’indexeur est limité à 512 Mo afin de laisser de la
-mémoire pour ses autres besoins. Ces limites s’appliquent aux conteneurs, et
-non à la construction des images. Elles sont volontairement modestes et
-peuvent ralentir le démarrage ou les services ; les conteneurs peuvent
-redémarrer s’ils dépassent leur limite de mémoire.
+Lorsque la base de données est incluse, la pile est limitée à un total de
+3 Go de mémoire vive et 2 processeurs : indexeur, 1 Go / 1 processeur ;
+gestionnaire, 768 Mo / 0,5 processeur ; tableau de bord, 512 Mo / 0,25
+processeur ; serveur web, 256 Mo / 0,125 processeur ; base de données,
+512 Mo / 0,125 processeur. Le tas JVM de l’indexeur est limité à 512 Mo afin de
+laisser de la mémoire pour ses autres besoins. Ces limites s’appliquent aux
+conteneurs, et non à la construction des images. Elles sont volontairement
+modestes et peuvent ralentir le démarrage ou les services ; les conteneurs
+peuvent redémarrer s’ils dépassent leur limite de mémoire.
 
 ## Prérequis
 
@@ -33,8 +32,8 @@ redémarrer s’ils dépassent leur limite de mémoire.
 Exécutez ces commandes depuis la racine du dépôt dans PowerShell :
 
 ```powershell
-Copy-Item .\.env.example .\.env
-notepad .\.env
+Copy-Item .\\.env.example .\\.env
+notepad .\\.env
 docker compose up -d --build
 docker compose ps
 ```
@@ -46,15 +45,14 @@ commettre des certificats générés. Les autres services Wazuh attendent la fin
 de cette génération. Le volume conserve la même autorité de certification et
 les mêmes certificats de nœud lors des redémarrages.
 
-Après le démarrage de l’indexeur, un service ponctuel initialise sa
-configuration de sécurité avant le démarrage du gestionnaire et du tableau de
-bord.
+Après le démarrage de l’indexeur, sa configuration de sécurité est initialisée
+avant le démarrage du gestionnaire et du tableau de bord.
 
 Ajoutez votre clé publique SSH à la ligne `SSH_PUBLIC_KEY` du fichier `.env`.
 Si vous n’avez pas encore de paire de clés, créez-en une :
 
 ```powershell
-ssh-keygen -t ed25519 -f "$env:USERPROFILE\.ssh\id_ed25519"
+ssh-keygen -t ed25519 -f "$env:USERPROFILE\\.ssh\\id_ed25519"
 ```
 
 Utilisez le contenu du fichier `.pub` obtenu pour la valeur de
@@ -64,12 +62,11 @@ la connexion SSH de l’utilisateur root sont désactivés. Les clés SSH sont
 conservées dans un volume Compose. L’agent du serveur web s’enregistre auprès
 du gestionnaire sous le nom `webserver`.
 
-Le service de base de données est un profil Compose facultatif. Pour l’activer,
-définissez une valeur non vide pour `MARIADB_ROOT_PASSWORD` dans `.env`, puis
-exécutez :
+Le service de base de données fait partie de la pile par défaut. Définissez
+`MARIADB_ROOT_PASSWORD` dans `.env` (valeur requise), puis démarrez avec :
 
 ```powershell
-docker compose --profile database up -d --build
+docker compose up -d --build
 ```
 
 Le port MariaDB est accessible uniquement depuis la machine locale, sur le

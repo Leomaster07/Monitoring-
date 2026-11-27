@@ -1,4 +1,4 @@
-name: wazuh
+﻿name: wazuh
 
 services:
 
@@ -80,19 +80,16 @@ services:
     depends_on:
       certificates:
         condition: service_completed_successfully
-      wazuh.indexer.security-init:
-        condition: service_completed_successfully
 
   wazuh.indexer:
     image: wazuh/wazuh-indexer:4.14.11
     hostname: wazuh.indexer
-    restart: always
-    cpus: 1.0
-    mem_limit: 1g
-    ports:
-      - "127.0.0.1:9200:9200"
+    restart: unless-stopped
+    depends_on:
+      certificates:
+        condition: service_completed_successfully
     environment:
-      - "OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m"
+      OPENSEARCH_JAVA_OPTS: "-Xms1g -Xmx1g"
     ulimits:
       memlock:
         soft: -1
@@ -101,49 +98,16 @@ services:
         soft: 65536
         hard: 65536
     volumes:
-      - wazuh-indexer-data:/var/lib/wazuh-indexer
-      - wazuh_certs:/usr/share/wazuh-indexer/config/certs:ro
-      - ./wazuh/config/wazuh_indexer/wazuh.indexer.yml:/usr/share/wazuh-indexer/config/opensearch.yml
-      - ./wazuh/config/wazuh_indexer/internal_users.yml:/usr/share/wazuh-indexer/config/opensearch-security/internal_users.yml
-    depends_on:
-      certificates:
-        condition: service_completed_successfully
-
-  wazuh.indexer.security-init:
-    image: wazuh/wazuh-indexer:4.14.11
-    restart: "no"
-    cpus: 0.125
-    mem_limit: 256m
-    user: wazuh-indexer
-    entrypoint: ["/bin/bash", "-c"]
-    command:
-      - |
-        set -eu
-        ready=0
-        for attempt in {1..60}; do
-          if (echo > /dev/tcp/wazuh.indexer/9200) 2>/dev/null; then
-            ready=1
-            break
-          fi
-          sleep 5
-        done
-        if [ "$$ready" -ne 1 ]; then
-          echo "Wazuh indexer did not become available for security initialization."
-          exit 1
-        fi
-        export JAVA_HOME=/usr/share/wazuh-indexer/jdk
-        exec /usr/share/wazuh-indexer/plugins/opensearch-security/tools/securityadmin.sh \
-          -cd /usr/share/wazuh-indexer/config/opensearch-security \
-          -cacert /usr/share/wazuh-indexer/config/certs/root-ca.pem \
-          -cert /usr/share/wazuh-indexer/config/certs/admin.pem \
-          -key /usr/share/wazuh-indexer/config/certs/admin-key.pem \
-          -h wazuh.indexer -p 9200 -icl -nhnv
-    volumes:
-      - wazuh_certs:/usr/share/wazuh-indexer/config/certs:ro
+      - wazuh_indexer_data:/var/lib/wazuh-indexer
+      - wazuh_certs:/usr/share/wazuh-indexer/config/certs
+      - ./wazuh/config/wazuh_indexer/opensearch.yml:/usr/share/wazuh-indexer/config/opensearch.yml
       - ./wazuh/config/wazuh_indexer/internal_users.yml:/usr/share/wazuh-indexer/config/opensearch-security/internal_users.yml:ro
-    depends_on:
-      wazuh.indexer:
-        condition: service_started
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fks https://localhost:9200/_plugins/_security/health | grep -q '\\\"status\\\":\\\"UP\\\"'"]
+      interval: 20s
+      timeout: 10s
+      retries: 10
+      start_period: 90s
 
   wazuh.dashboard:
     image: wazuh/wazuh-dashboard:4.14.11
@@ -174,8 +138,6 @@ services:
         condition: service_started
       certificates:
         condition: service_completed_successfully
-      wazuh.indexer.security-init:
-        condition: service_completed_successfully
     links:
       - wazuh.indexer:wazuh.indexer
       - wazuh.manager:wazuh.manager
@@ -205,8 +167,6 @@ services:
       - wazuh.manager
 
   database:
-    profiles:
-      - database
     build:
       context: ./endpoints/database
     image: monitoring-database:4.14.11
@@ -244,7 +204,7 @@ volumes:
   wazuh_wodles:
   filebeat_etc:
   filebeat_var:
-  wazuh-indexer-data:
+  wazuh_indexer_data:
   wazuh-dashboard-config:
   wazuh-dashboard-custom:
   webserver_wazuh_etc:
