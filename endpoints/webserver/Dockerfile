@@ -26,6 +26,7 @@ COPY sshd_config /etc/ssh/sshd_config
 COPY wazuh-agent.conf /var/ossec/etc/ossec.conf
 COPY container-entrypoint.sh run-wazuh-agent.sh resource-metrics.sh /usr/local/bin/
 COPY html/ /usr/share/nginx/html/
+COPY cis_debian12.yml /var/ossec/etc/ruleset/sca/
 
 RUN chmod 0755 \
         /usr/local/bin/container-entrypoint.sh \
