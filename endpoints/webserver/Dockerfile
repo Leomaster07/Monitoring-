@@ -21,12 +21,14 @@ COPY --from=wazuh-agent /var/ossec /var/ossec
 
 RUN chown -R wazuh:wazuh /var/ossec
 
+RUN mkdir -p /var/ossec/ruleset/sca/
+
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 COPY sshd_config /etc/ssh/sshd_config
 COPY wazuh-agent.conf /var/ossec/etc/ossec.conf
 COPY container-entrypoint.sh run-wazuh-agent.sh resource-metrics.sh /usr/local/bin/
 COPY html/ /usr/share/nginx/html/
-COPY cis_debian12.yml /var/ossec/etc/ruleset/sca/
+COPY cis_debian12.yml /var/ossec/ruleset/sca/
 
 RUN chmod 0755 \
         /usr/local/bin/container-entrypoint.sh \
