@@ -1,2 +1,16 @@
-wazuh/config/wazuh_indexer_ssl_certs/*
-!wazuh/config/wazuh_indexer_ssl_certs/.gitkeep
+.env
+.env.*
+!.env.example
+**/.venv/
+**/__pycache__/
+*.py[cod]
+
+# Local credentials, certificates, and generated key material
+.secrets/
+secrets/
+*.pem
+*.key
+*.p12
+*.pfx
+*.crt
+*.cer

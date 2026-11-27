@@ -1,0 +1,15 @@
+[mariadb]
+plugin_load_add=server_audit
+server_audit=FORCE_PLUS_PERMANENT
+server_audit_logging=ON
+server_audit_events=CONNECT,QUERY,TABLE
+server_audit_output_type=FILE
+server_audit_file_path=/var/log/mysql/audit.log
+server_audit_file_rotate_size=10485760
+server_audit_file_rotations=5
+
+log_error=/var/log/mysql/mariadb-error.log
+slow_query_log=ON
+slow_query_log_file=/var/log/mysql/slow.log
+long_query_time=1
+performance_schema=ON
