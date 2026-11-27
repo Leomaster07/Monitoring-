@@ -113,3 +113,13 @@ stockées de Wazuh, y compris `wazuh_certs` ; au prochain démarrage, une
 nouvelle autorité de certification et de nouveaux certificats de nœud seront
 générés. Utilisez-la uniquement si vous souhaitez effacer définitivement ces
 données.
+
+## Notes de déploiement (Environnement VirtualBox)
+
+En raison de conflits de ports sur la machine virtuelle, les ports exposés ont été modifiés par rapport à la configuration d'origine :
+- **Serveur Web cible** : `http://localhost:9090`
+- **Accès SSH** : Port `2223` (au lieu de 2222)
+
+### Épreuve du feu
+Le script `scenario.sh` permet de simuler les attaques. 
+En cas de problème de clé SSH sur la VM, la détection a été prouvée via l'injection de logs dans le manager.
