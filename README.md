@@ -17,91 +17,77 @@ peuvent redémarrer s’ils dépassent leur limite de mémoire.
 
 ## Prérequis
 
-- Docker Desktop avec le moteur WSL 2 et Docker Compose v2.
-- Au moins 4 cœurs processeur, 8 Go de mémoire vive et 50 Go d’espace disque
-  libre.
-- Dans un terminal WSL 2, définissez la limite requise de mappage mémoire de
-  l’indexeur :
+- Linux (testé sur Ubuntu Server) avec Docker Engine et Docker Compose v2.
+- Au moins 4 cœurs processeur, 8 Go de mémoire vive et 50 Go d'espace disque libre.
+- Un accès à Internet au premier démarrage (environ 3 Go d'images à télécharger).
+- La limite de mappage mémoire requise par l'indexeur :
 
   ```sh
   sudo sysctl -w vm.max_map_count=262144
   ```
 
-## Démarrage
+## Démarrage en 3 commandes
 
-Exécutez ces commandes depuis la racine du dépôt dans PowerShell :
+Depuis la racine du dépôt :
 
-```powershell
-Copy-Item .\\.env.example .\\.env
-notepad .\\.env
-docker compose up -d --build
-docker compose ps
+```sh
+cp .env.example .env            # 1. créer son fichier de secrets
+./setup.sh                      # 2. générer les hashes et les fichiers de configuration
+docker compose up -d --build    # 3. démarrer la pile
 ```
 
-Au premier `docker compose up`, le service `certificates` génère
-automatiquement les certificats TLS internes de Wazuh. Il les conserve dans le
-volume Docker nommé `wazuh_certs` ; il n’est pas nécessaire de cloner ou de
-commettre des certificats générés. Les autres services Wazuh attendent la fin
-de cette génération. Le volume conserve la même autorité de certification et
-les mêmes certificats de nœud lors des redémarrages.
+Entre la commande 1 et la commande 2, ouvrez le fichier `.env` (par exemple avec
+`nano .env`) et remplissez **toutes** les valeurs. Aucun mot de passe n'est fourni
+dans le dépôt : chaque installation choisit les siens.
 
-Après le démarrage de l’indexeur, sa configuration de sécurité est initialisée
-avant le démarrage du gestionnaire et du tableau de bord.
+### Le fichier `.env`
 
-Ajoutez votre clé publique SSH à la ligne `SSH_PUBLIC_KEY` du fichier `.env`.
-Si vous n’avez pas encore de paire de clés, créez-en une :
+| Variable | Rôle |
+|---|---|
+| `INDEXER_PASSWORD` | mot de passe du compte `admin` (connexion au tableau de bord) |
+| `DASHBOARD_PASSWORD` | mot de passe du compte interne `kibanaserver` |
+| `API_PASSWORD` | mot de passe de l'API Wazuh (compte `wazuh-wui`) |
+| `SSH_PUBLIC_KEY` | clé publique SSH autorisée sur le serveur web (entre guillemets) |
+| `MARIADB_ROOT_PASSWORD` | mot de passe root de la base de données |
 
-```powershell
-ssh-keygen -t ed25519 -f "$env:USERPROFILE\\.ssh\\id_ed25519"
-```
+Règles pour les mots de passe Wazuh : de 8 à 64 caractères, avec au moins une
+majuscule, une minuscule, un chiffre et un symbole. Pour `API_PASSWORD`, le symbole
+doit être l'un de `.` `*` `+` `?` `-`. N'utilisez ni espace, ni guillemet, ni `$`.
 
-Utilisez le contenu du fichier `.pub` obtenu pour la valeur de
-`SSH_PUBLIC_KEY`. Le service SSH n’accepte que l’authentification par clé
-publique pour l’utilisateur non privilégié `webadmin` ; les mots de passe et
-la connexion SSH de l’utilisateur root sont désactivés. Les clés SSH sont
-conservées dans un volume Compose. L’agent du serveur web s’enregistre auprès
-du gestionnaire sous le nom `webserver`.
+Le fichier `.env` n'est jamais envoyé dans Git. Pour la clé SSH, mettez la valeur
+entre guillemets, par exemple `SSH_PUBLIC_KEY="ssh-ed25519 AAAA... nom"`. Si vous
+n'avez pas de clé, créez-en une avec `ssh-keygen -t ed25519`.
 
-Le service de base de données fait partie de la pile par défaut. Définissez
-`MARIADB_ROOT_PASSWORD` dans `.env` (valeur requise), puis démarrez avec :
+### Ce que fait `setup.sh`
 
-```powershell
-docker compose up -d --build
-```
+Le script lit le `.env`, calcule les hashes bcrypt des mots de passe de l'indexeur et
+génère deux fichiers de configuration : `wazuh/config/wazuh_indexer/internal_users.yml`
+et `wazuh/config/wazuh_dashboard/wazuh.yml`. Ces deux fichiers contiennent des secrets,
+ils sont donc ignorés par Git ; seuls leurs modèles `.example` sont versionnés.
 
-Le port MariaDB est accessible uniquement depuis la machine locale, sur le
-port 3307 ; l’agent de base de données s’enregistre sous le nom `database`.
+Au premier démarrage, le service `certificates` génère les certificats TLS internes
+de Wazuh dans le volume `wazuh_certs` : il n'y a aucun certificat à créer ni à
+versionner. Le premier démarrage peut prendre plusieurs minutes.
 
-Le premier démarrage peut prendre plusieurs minutes pendant l’initialisation
-de l’indexeur. Ouvrez <https://localhost> et acceptez l’avertissement lié au
-certificat TLS autosigné.
+## Accès
 
-La page de test Nginx est accessible à l’adresse <http://localhost:8080>. SSH
-est accessible localement sur le port 2222 :
+| Service | Adresse |
+|---|---|
+| Tableau de bord Wazuh | <https://localhost> (acceptez le certificat autosigné) |
+| Boîte mail des alertes (Mailpit) | <http://localhost:8025> |
+| Serveur web | <http://localhost:8080> |
+| SSH (utilisateur `webadmin`, clé uniquement) | `ssh -p 2222 webadmin@localhost` |
 
-```powershell
-ssh -p 2222 webadmin@localhost
-```
+Connexion au tableau de bord : utilisateur `admin`, mot de passe = valeur de
+`INDEXER_PASSWORD` dans votre `.env`.
 
-Identifiants par défaut du tableau de bord au premier démarrage :
-
-- Nom d’utilisateur : `admin`
-- Mot de passe : `SecretPassword`
-
-Le mot de passe initial de l’API Wazuh pour `wazuh-wui` est
-`MyS3cr37P450r.*-`. Ce sont les identifiants de démonstration fournis en
-amont. Par défaut, HTTPS du tableau de bord (port 443), l’API du gestionnaire
-(port 55000) et l’API de l’indexeur (port 9200) sont accessibles uniquement
-depuis la machine locale. L’enregistrement des agents et l’envoi de leurs
-événements vers le gestionnaire utilisent les ports 1515 et 1514 (TCP), et
-Syslog utilise le port 514 (UDP). Pour autoriser l’accès distant au tableau de
-bord, changez les identifiants de démonstration, modifiez les adresses
-d’écoute dans `docker-compose.yml` et limitez l’accès avec le pare-feu avant
-toute exposition.
-
+Le tableau de bord (443), l'API du gestionnaire (55000), l'indexeur (9200), le
+serveur web (8080, 2222) et la base de données (3307) ne sont accessibles que
+depuis la machine locale. Le service SSH n'accepte que la clé publique de
+`webadmin` : les mots de passe et la connexion root sont désactivés.
 ## Exploitation
 
-```powershell
+```sh
 docker compose logs -f
 docker compose down
 ```
