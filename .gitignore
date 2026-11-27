@@ -14,3 +14,7 @@ secrets/
 *.pfx
 *.crt
 *.cer
+
+# Fichiers generes par setup.sh a partir du .env
+wazuh/config/wazuh_dashboard/wazuh.yml
+wazuh/config/wazuh_indexer/internal_users.yml

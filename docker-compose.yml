@@ -56,13 +56,13 @@ services:
     environment:
       - INDEXER_URL="https://wazuh.indexer:9200"
       - INDEXER_USERNAME=admin
-      - INDEXER_PASSWORD=SecretPassword
+      - INDEXER_PASSWORD=${INDEXER_PASSWORD:?Definir INDEXER_PASSWORD dans .env}
       - FILEBEAT_SSL_VERIFICATION_MODE=full
       - SSL_CERTIFICATE_AUTHORITIES=/wazuh-certs/root-ca-manager.pem
       - SSL_CERTIFICATE=/wazuh-certs/wazuh.manager.pem
       - SSL_KEY=/wazuh-certs/wazuh.manager-key.pem
       - API_USERNAME=wazuh-wui
-      - API_PASSWORD=MyS3cr37P450r.*-
+      - API_PASSWORD=${API_PASSWORD:?Definir API_PASSWORD dans .env}
     volumes:
       - wazuh_api_configuration:/var/ossec/api/configuration
       - wazuh_etc:/var/ossec/etc
@@ -155,12 +155,12 @@ services:
       - "127.0.0.1:443:5601"
     environment:
       - INDEXER_USERNAME=admin
-      - INDEXER_PASSWORD=SecretPassword
+      - INDEXER_PASSWORD=${INDEXER_PASSWORD:?Definir INDEXER_PASSWORD dans .env}
       - WAZUH_API_URL=https://wazuh.manager
       - DASHBOARD_USERNAME=kibanaserver
-      - DASHBOARD_PASSWORD=kibanaserver
+      - DASHBOARD_PASSWORD=${DASHBOARD_PASSWORD:?Definir DASHBOARD_PASSWORD dans .env}
       - API_USERNAME=wazuh-wui
-      - API_PASSWORD=MyS3cr37P450r.*-
+      - API_PASSWORD=${API_PASSWORD:?Definir API_PASSWORD dans .env}
     volumes:
       - wazuh_certs:/usr/share/wazuh-dashboard/certs:ro
       - ./wazuh/config/wazuh_dashboard/opensearch_dashboards.yml:/usr/share/wazuh-dashboard/config/opensearch_dashboards.yml
