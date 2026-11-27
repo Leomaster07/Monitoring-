@@ -1,14 +1,24 @@
-# Dashboards Wazuh et alerte e-mail
+# Notes : dashboards Wazuh
 
-## Dashboard 1 : Vue Direction (Overview)
-Agents actifs et alertes des dernières 24h par sévérité (capture 12-49-36).
+## Ce qui a été construit
+Deux dashboards personnalisés (8 graphiques au total), exportés dans `dashboards/dashboards_wazuh.ndjson`.
+Les vues fournies par Wazuh (Overview, Threat Hunting) ont servi de point de départ pour comprendre les données, mais elles ne sont pas le livrable.
 
-## Dashboard 2 : Vue Exploitation (Threat Hunting)
-Alertes dans le temps et top 5 des agents (captures 13-54-35 et 13-54-46).
+## Dashboard Direction (synthèse métier)
+- DIR - Alertes par niveau
+- Dir - Evolutions des alertes (évolution dans le temps)
+- Dir-Totale des alertes
+- Dir-Disponibilité des agents
 
-## Alerte e-mail
-Wazuh envoie automatiquement un e-mail "Alert level 3" (règle 502) vers Mailpit (capture 14-43-53).
-Mailpit a été lancé à part avec docker run. Le seuil est à 3 pour la démonstration.
+## Dashboard Exploitation (vue technique, méthodes USE/RED)
+- EXP-Alertes par agents : quelle machine produit le plus d'alertes
+- EXP - Top 10 des règles : quel événement se répète le plus
+- EXP-Rythme des alertes : indicateur Rate (RED)
+- EXP - Alertes niveau 7+ : indicateur Errors (RED)
 
-## Limite
-scenario.sh non reproduit sur ma machine : le conteneur webserver n'a ni sudo ni useradd.
+## Notification
+Les e-mails d'alerte passent par Mailpit, qui est un service du projet (docker-compose).
+
+## Fichiers
+- `dashboards/dashboards_wazuh.ndjson` : export des 2 dashboards et de leurs graphiques
+- `captures/` : captures des dashboards
