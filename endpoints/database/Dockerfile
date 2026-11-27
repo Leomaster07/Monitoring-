@@ -17,6 +17,7 @@ RUN chown -R wazuh:wazuh /var/ossec \
 COPY 99-wazuh.cnf /etc/mysql/mariadb.conf.d/99-wazuh.cnf
 COPY wazuh-agent.conf /var/ossec/etc/ossec.conf
 COPY container-entrypoint.sh run-wazuh-agent.sh database-metrics.sh database-metrics-loop.sh resource-metrics.sh /usr/local/bin/
+COPY cis_ubuntu24-04.yml /var/ossec/etc/ruleset/sca/
 
 RUN chmod 0755 \
     /usr/local/bin/container-entrypoint.sh \

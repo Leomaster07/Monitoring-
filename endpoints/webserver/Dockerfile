@@ -12,7 +12,7 @@ RUN apt-get update \
     && useradd --system --uid 10002 --create-home \
         --home-dir /home/webadmin --shell /bin/bash webadmin \
     && mkdir -p /var/log/webserver /var/ossec/etc /var/ossec/logs /var/ossec/queue \
-        /home/webadmin/.ssh /run/sshd \
+        /home/webadmin/.ssh /opt/security-lab /run/sshd \
     && chmod 0700 /home/webadmin/.ssh \
     && chown -R wazuh:wazuh /var/ossec \
     && chown -R webadmin:webadmin /home/webadmin
@@ -26,6 +26,7 @@ COPY sshd_config /etc/ssh/sshd_config
 COPY wazuh-agent.conf /var/ossec/etc/ossec.conf
 COPY container-entrypoint.sh run-wazuh-agent.sh resource-metrics.sh /usr/local/bin/
 COPY html/ /usr/share/nginx/html/
+COPY cis_debian12.yml /var/ossec/etc/ruleset/sca/
 
 RUN chmod 0755 \
         /usr/local/bin/container-entrypoint.sh \
