@@ -19,9 +19,6 @@ hash() {
 }
 
 # 1. certificats
-if [ ! -f $CFG/wazuh_indexer_ssl_certs/root-ca.pem ]; then
-  docker compose -f wazuh/generate-indexer-certs.yml run --rm generator
-fi
 
 # 2. comptes de l'indexeur
 HA=$(hash "$INDEXER_PASSWORD")
