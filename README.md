@@ -99,13 +99,24 @@ stockées de Wazuh, y compris `wazuh_certs` ; au prochain démarrage, une
 nouvelle autorité de certification et de nouveaux certificats de nœud seront
 générés. Utilisez-la uniquement si vous souhaitez effacer définitivement ces
 données.
+## Épreuve du feu
 
-## Notes de déploiement (Environnement VirtualBox)
+Le script `scenario.sh` simule une attaque réelle, entièrement dans Docker (rien à installer sur la machine hôte). Le stack doit être démarré (`docker compose up -d --build`).
 
-En raison de conflits de ports sur la machine virtuelle, les ports exposés ont été modifiés par rapport à la configuration d'origine :
-- **Serveur Web cible** : `http://localhost:9090`
-- **Accès SSH** : Port `2223` (au lieu de 2222)
+```sh
+./scenario.sh          # les deux attaques à la suite
+./scenario.sh brute    # brute force SSH seulement
+./scenario.sh persist  # utilisateur root caché seulement
+./scenario.sh reset    # remise à zéro pour rejouer
+```
 
-### Épreuve du feu
-Le script `scenario.sh` permet de simuler les attaques. 
-En cas de problème de clé SSH sur la VM, la détection a été prouvée via l'injection de logs dans le manager.
+| Étape | Ce que fait le script | Détection attendue |
+|---|---|---|
+| Brute force SSH | Le conteneur `attacker` (réseau `public`, profil `demo`) tente 6 connexions avec de faux utilisateurs vers `webserver` | Règle `100120` (niveau 12) au 5e échec, mail dans Mailpit, puis Active Response `firewall-drop` : l'IP de l'attaquant est bloquée 300 s |
+| Persistance | Création d'un utilisateur caché avec UID 0 (`support`) dans `webserver` | Règle FIM `100100` (niveau 12) sur `/etc/passwd`, mail dans Mailpit |
+
+Où observer le résultat :
+- Mails d'alerte : Mailpit, `http://127.0.0.1:8025`
+- Alertes détaillées : dashboard Wazuh, `https://127.0.0.1` (module *Threat Hunting*)
+
+L'IP bloquée est débloquée automatiquement après 300 s. Pour rejouer la démonstration tout de suite : `./scenario.sh reset`.
