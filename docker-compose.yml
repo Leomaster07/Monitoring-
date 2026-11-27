@@ -152,6 +152,9 @@ services:
     init: true
     cap_add:
       - NET_ADMIN
+    networks:
+      - default
+      - public
     cpus: 0.125
     mem_limit: 256m
     ports:
@@ -205,6 +208,18 @@ services:
       MP_SMTP_BIND_ADDR: 0.0.0.0:25
     ports:
       - "127.0.0.1:8025:8025"
+  attacker:
+    image: monitoring-webserver:4.14.11
+    profiles: ["demo"]
+    hostname: attacker
+    entrypoint: ["sleep", "infinity"]
+    networks:
+      - public
+    depends_on:
+      - webserver
+    cpus: 0.1
+    mem_limit: 64m
+
 volumes:
   wazuh_certs:
   wazuh_api_configuration:
@@ -230,3 +245,5 @@ volumes:
   database_wazuh_etc:
   database_wazuh_logs:
   database_wazuh_queue:
+networks:
+  public:
