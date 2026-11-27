@@ -3,7 +3,7 @@ FROM wazuh/wazuh-agent:4.14.11 AS wazuh-agent
 FROM nginx:1.28-bookworm
 
 RUN apt-get update \
-    && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends openssh-server \
+    && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends openssh-server rsyslog iptables \
     && rm -rf /var/lib/apt/lists/* \
     && groupadd --system --gid 10001 wazuh \
     && useradd --system --uid 10001 --gid wazuh \

@@ -77,6 +77,7 @@ services:
       - filebeat_var:/var/lib/filebeat
       - wazuh_certs:/wazuh-certs:ro
       - ./wazuh/config/wazuh_cluster/wazuh_manager.conf:/wazuh-config-mount/etc/ossec.conf
+      - ./wazuh/config/wazuh_cluster/local_rules.xml:/wazuh-config-mount/etc/rules/local_rules.xml
     depends_on:
       certificates:
         condition: service_completed_successfully
@@ -148,6 +149,9 @@ services:
     image: monitoring-webserver:4.14.11
     hostname: webserver
     restart: always
+    init: true
+    cap_add:
+      - NET_ADMIN
     cpus: 0.125
     mem_limit: 256m
     ports:
@@ -191,6 +195,16 @@ services:
     depends_on:
       - wazuh.manager
 
+  mailpit:
+    image: axllent/mailpit
+    hostname: mailpit
+    restart: always
+    cpus: 0.1
+    mem_limit: 64m
+    environment:
+      MP_SMTP_BIND_ADDR: 0.0.0.0:25
+    ports:
+      - "127.0.0.1:8025:8025"
 volumes:
   wazuh_certs:
   wazuh_api_configuration:

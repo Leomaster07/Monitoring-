@@ -1,0 +1,94 @@
+<!-- Regles locales du projet (groupe 1)
+     Niveaux : 3 = note, 8 = warning (dashboard), 9 = a surveiller,
+     10 = critical (mail), 12 = critical securite (mail) -->
+
+<!-- ===== INFRA : disponibilite ===== -->
+<group name="local,infra,">
+  <rule id="100110" level="10">
+    <if_sid>504</if_sid>
+    <description>Infra : agent deconnecte, serveur hors supervision</description>
+  </rule>
+</group>
+
+<!-- ===== INFRA : saturation CPU / RAM (mesure toutes les 5 s) ===== -->
+<group name="local,infra,resources,">
+  <!-- CPU 90 pour cent ou plus : critical -->
+  <rule id="100130" level="3">
+    <decoded_as>json</decoded_as>
+    <field name="metric" type="pcre2">^cpu$</field>
+    <field name="value_pct" type="pcre2">^(9[0-9]|100)(\.[0-9]+)?$</field>
+    <description>Infra : mesure CPU superieure ou egale a 90 pour cent</description>
+  </rule>
+
+  <rule id="100131" level="10" frequency="50" timeframe="300">
+    <if_matched_sid>100130</if_matched_sid>
+    <same_field>service</same_field>
+    <description>Infra : CPU saturee de facon prolongee (90 pour cent ou plus pendant environ 5 min)</description>
+  </rule>
+
+  <!-- RAM 90 pour cent ou plus : critical -->
+  <rule id="100132" level="3">
+    <decoded_as>json</decoded_as>
+    <field name="metric" type="pcre2">^ram$</field>
+    <field name="value_pct" type="pcre2">^(9[0-9]|100)(\.[0-9]+)?$</field>
+    <description>Infra : mesure RAM superieure ou egale a 90 pour cent</description>
+  </rule>
+
+  <rule id="100133" level="10" frequency="50" timeframe="300">
+    <if_matched_sid>100132</if_matched_sid>
+    <same_field>service</same_field>
+    <description>Infra : RAM saturee de facon prolongee (90 pour cent ou plus pendant environ 5 min)</description>
+  </rule>
+
+  <!-- CPU entre 80 et 90 pour cent : warning -->
+  <rule id="100134" level="0">
+    <decoded_as>json</decoded_as>
+    <field name="metric" type="pcre2">^cpu$</field>
+    <field name="value_pct" type="pcre2">^8[0-9](\.[0-9]+)?$</field>
+    <description>Infra : mesure CPU entre 80 et 90 pour cent</description>
+  </rule>
+
+  <rule id="100135" level="8" frequency="50" timeframe="300">
+    <if_matched_sid>100134</if_matched_sid>
+    <same_field>service</same_field>
+    <description>Infra : CPU elevee de facon prolongee (80 a 90 pour cent pendant environ 5 min)</description>
+  </rule>
+
+  <!-- RAM entre 80 et 90 pour cent : warning -->
+  <rule id="100136" level="0">
+    <decoded_as>json</decoded_as>
+    <field name="metric" type="pcre2">^ram$</field>
+    <field name="value_pct" type="pcre2">^8[0-9](\.[0-9]+)?$</field>
+    <description>Infra : mesure RAM entre 80 et 90 pour cent</description>
+  </rule>
+
+  <rule id="100137" level="8" frequency="50" timeframe="300">
+    <if_matched_sid>100136</if_matched_sid>
+    <same_field>service</same_field>
+    <description>Infra : RAM elevee de facon prolongee (80 a 90 pour cent pendant environ 5 min)</description>
+  </rule>
+</group>
+
+<!-- ===== SECURITE : integrite des fichiers (FIM) ===== -->
+<group name="local,syscheck,fim,">
+  <!-- 550 = fichier modifie, 553 = supprime, 554 = ajoute -->
+  <rule id="100100" level="12">
+    <if_sid>550,553,554</if_sid>
+    <field name="file" type="pcre2">^/etc/(passwd|shadow|group|sudoers|ssh/sshd_config)$</field>
+    <description>Securite : fichier systeme critique modifie (comptes, sudo ou SSH)</description>
+    <mitre><id>T1098</id></mitre>
+  </rule>
+
+  <rule id="100101" level="12">
+    <if_sid>550,553,554</if_sid>
+    <field name="file" type="pcre2">^/(usr/)?s?bin/</field>
+    <description>Securite : binaire systeme modifie ou ajoute</description>
+    <mitre><id>T1554</id></mitre>
+  </rule>
+
+  <rule id="100102" level="9">
+    <if_sid>550,553,554</if_sid>
+    <field name="file" type="pcre2">^/(usr/share/nginx/html|var/www)/</field>
+    <description>Web : contenu du site modifie</description>
+  </rule>
+</group>
