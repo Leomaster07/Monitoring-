@@ -1,0 +1,8 @@
+<!-- Regles locales du projet (groupe 1) -->
+
+<group name="local,infra,">
+  <rule id="100110" level="10">
+    <if_sid>504</if_sid>
+    <description>Infra : agent deconnecte, serveur hors supervision</description>
+  </rule>
+</group>
