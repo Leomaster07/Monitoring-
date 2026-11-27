@@ -29,7 +29,10 @@ rm -f /var/log/nginx/access.log /var/log/nginx/error.log
 touch /var/log/nginx/access.log /var/log/nginx/error.log
 chmod 0644 /var/log/nginx/access.log /var/log/nginx/error.log
 
-/usr/sbin/sshd -D -E /var/log/auth.log &
+sed -i 's/^module(load="imklog"/#&/' /etc/rsyslog.conf
+rm -f /run/rsyslogd.pid
+rsyslogd
+/usr/sbin/sshd -D &
 sshd_pid=$!
 nginx -g 'daemon off;' &
 nginx_pid=$!

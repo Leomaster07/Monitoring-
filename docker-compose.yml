@@ -148,6 +148,9 @@ services:
     image: monitoring-webserver:4.14.11
     hostname: webserver
     restart: always
+    init: true
+    cap_add:
+      - NET_ADMIN
     cpus: 0.125
     mem_limit: 256m
     ports:
