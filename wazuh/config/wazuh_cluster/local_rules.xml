@@ -92,3 +92,22 @@
     <description>Web : contenu du site modifie</description>
   </rule>
 </group>
+<group name="local,sshd,authentication_failures,">
+  <rule id="100120" level="12" frequency="5" timeframe="60">
+    <if_matched_sid>5710</if_matched_sid>
+    <same_source_ip />
+    <description>Securite : brute force SSH, 5 echecs en 60 s depuis la meme IP (utilisateur inexistant)</description>
+    <mitre>
+      <id>T1110</id>
+    </mitre>
+  </rule>
+
+  <rule id="100121" level="12" frequency="5" timeframe="60">
+    <if_matched_sid>5718</if_matched_sid>
+    <same_source_ip />
+    <description>Securite : brute force SSH, 5 echecs en 60 s depuis la meme IP (utilisateur refuse)</description>
+    <mitre>
+      <id>T1110</id>
+    </mitre>
+  </rule>
+</group>
