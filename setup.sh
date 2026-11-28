@@ -31,4 +31,13 @@ sed "s|^\( *password:\).*|\1 \"$API_PASSWORD\"|" \
   $CFG/wazuh_dashboard/wazuh.yml.example > $CFG/wazuh_dashboard/wazuh.yml
 
 chmod 644 $CFG/wazuh_indexer/internal_users.yml $CFG/wazuh_dashboard/wazuh.yml
+
+# 4. garde-fou : un volume indexeur existant ignore les nouveaux mots de passe
+OLD_VOL=$(docker volume ls -q | grep -E 'wazuh_indexer_data$' || true)
+if [ -n "$OLD_VOL" ]; then
+  echo "ATTENTION : volume indexeur existant ($OLD_VOL)."
+  echo "Les nouveaux mots de passe seront ignores tant qu'il existe."
+  echo "Avant 'up', lance : docker compose down && docker volume rm $OLD_VOL"
+fi
+
 echo "OK : configuration generee. Lance maintenant : docker compose up -d"
